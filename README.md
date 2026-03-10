@@ -83,6 +83,7 @@ On first run with no wallets, it’ll run discover for you so you’re not stari
 | `RUN_API` | Set to `false` if you only want the tracker loop, no API/dashboard. |
 | `LEADERBOARD_DISCOVER_LIMIT` | How many top leaderboard traders to add when you run discover (default 50). |
 | `PAPER_TRADING_ENABLED` | Set to `true` to open paper positions when whale alerts fire (default false). |
+| `PAPER_TRADING_PRIVATE_KEY` | Optional. Ethereum private key (0x + 64 hex). Derives the wallet address for the paper account; returned as `walletAddress` in `GET /api/paper/portfolio`. Never sent or logged. |
 | `PAPER_INITIAL_BALANCE` | Starting virtual balance (default 100000). |
 | `PAPER_MAX_POSITION_PCT` | Max % of balance per position (default 10). |
 | `PAPER_MAX_DAILY_LOSS_PCT` | Stop opening paper trades if daily PnL is below this % of balance (default 5). |
@@ -98,13 +99,21 @@ On first run with no wallets, it’ll run discover for you so you’re not stari
 
 With the API up, hit **http://localhost:3001** (or `/dashboard/`). You get:
 
-- A live leaderboard of your tracked wallets by PnL.
-- Refresh to recompute from current positions.
-- Click any row → full wallet page: all positions, size, P&L, and links to Polymarket. Paginated (50 per page), with a back-to-top button when you’re deep in the list.
+- A live **leaderboard** of your tracked wallets by PnL.
+- **Refresh** to recompute from current positions.
+- Click any row → full **wallet page**: all positions, size, P&L, and links to Polymarket. Paginated (20 per page), with a back-to-top button when you’re deep in the list.
+- A **Paper** tab: paper portfolio (balance, daily PnL, unrealized PnL, positions, trade history) and a reset form. Use it when `PAPER_TRADING_ENABLED=true`.
 
-![Dashboard](src/dashboard.png)
+Screenshots:
 
-![Address page](src/address_page.png)
+1. **Leaderboard** — tracked wallets ranked by PnL  
+   ![Leaderboard](src/leaderboard.png)
+
+2. **Paper summary** — paper portfolio stats and overview  
+   ![Paper summary](src/paper_summary.png)
+
+3. **Paper trading** — paper positions and trade flow  
+   ![Paper trading](src/paper_trading.png)
 
 ---
 
@@ -135,3 +144,9 @@ Everything is read-only from Polymarket’s public APIs (no keys, no CLOB auth):
 - **Gamma API** — Events and market metadata.
 
 So you’re not moving any orders or capital; you’re just watching flow and PnL and getting a heads-up when it’s worth a look.
+
+---
+
+**Heads up:** This repo is for **paper trading and testing only**—no real money, no live execution. Use it to try the flow and the AI risk layer without putting capital at risk. If you’re looking for a production-grade setup with real trading, reach out to the repo owner.
+
+**Contact:** [Telegram](https://t.me/snipmaxi)

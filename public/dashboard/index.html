@@ -314,6 +314,67 @@
       transform: translateY(0);
     }
     .scroll-to-top:hover { opacity: 0.95; }
+    /* Paper view: match screenshot layout */
+    .controls a.btn-nav {
+      text-decoration: none;
+      color: inherit;
+    }
+    .controls a.btn-nav.active {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+    }
+    .controls a.btn-nav.active:hover { opacity: 0.9; }
+    .paper-section {
+      padding: 20px;
+    }
+    .paper-section .section-title {
+      margin: 0 0 16px 0;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .paper-section .section-title + .loading,
+    .paper-section .section-title + .error,
+    .paper-section .section-title + div {
+      margin-top: 0;
+    }
+    .paper-status-enabled {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .paper-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--positive);
+      flex-shrink: 0;
+    }
+    .paper-status-dot.disabled {
+      background: var(--text-muted);
+    }
+    #paperResetMessage.reset-success {
+      color: var(--positive);
+    }
+    #paperResetMessage.reset-error {
+      color: var(--negative);
+    }
+    details.table-wrap summary {
+      display: block;
+      padding: 20px;
+      margin: -20px 0 0 -20px;
+      border-radius: var(--radius);
+    }
+    details.table-wrap summary:hover {
+      background: rgba(0,0,0,0.15);
+    }
+    details.table-wrap[open] summary {
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+    }
   </style>
 </head>
 <body>
@@ -321,6 +382,8 @@
     <header>
       <h1><span class="emoji">🐋</span> Polymarket Whale Tracker</h1>
       <div class="controls">
+        <a href="/dashboard/" class="btn btn-ghost btn-nav" id="navLeaderboard">Leaderboard</a>
+        <a href="/dashboard/#paper" class="btn btn-ghost btn-nav" id="navPaper">Paper</a>
         <button class="btn btn-ghost" id="refreshBtn">Refresh</button>
       </div>
     </header>
@@ -353,6 +416,92 @@
           </thead>
           <tbody id="leaderboardBody"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Paper trading view (layout matches shared screenshot) -->
+    <div id="paperView" class="view">
+      <div class="breadcrumb"><a href="/dashboard/">← Leaderboard</a> · <span class="text-muted">Paper Trading</span></div>
+      <details class="table-wrap" style="margin-bottom: 20px;">
+        <summary class="paper-section section-title" style="cursor: pointer; list-style: none; margin-bottom: 0;">Sample screenshots (reference)</summary>
+        <div class="paper-section" style="padding-top: 8px;">
+          <p class="text-muted" style="margin: 0 0 12px 0; font-size: 13px;">This UI matches the sample layout below.</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+            <figure style="margin: 0; max-width: 320px;">
+              <img src="/dashboard/images/paper-trading-dashboard-overview.png" alt="Paper trading overview" style="width: 100%; border-radius: var(--radius); border: 1px solid var(--border);" loading="lazy" onerror="this.parentElement.style.display='none'" />
+              <figcaption class="text-muted" style="font-size: 11px; margin-top: 6px;">Overview: stats, positions, trades, reset</figcaption>
+            </figure>
+            <figure style="margin: 0; max-width: 320px;">
+              <img src="/dashboard/images/paper-trading-positions-and-trades.png" alt="Paper positions and trades" style="width: 100%; border-radius: var(--radius); border: 1px solid var(--border);" loading="lazy" onerror="this.parentElement.style.display='none'" />
+              <figcaption class="text-muted" style="font-size: 11px; margin-top: 6px;">With positions and trade history</figcaption>
+            </figure>
+            <figure style="margin: 0; max-width: 320px;">
+              <img src="/dashboard/images/paper-trading-reset-flow.png" alt="Reset portfolio flow" style="width: 100%; border-radius: var(--radius); border: 1px solid var(--border);" loading="lazy" onerror="this.parentElement.style.display='none'" />
+              <figcaption class="text-muted" style="font-size: 11px; margin-top: 6px;">Reset portfolio success</figcaption>
+            </figure>
+          </div>
+        </div>
+      </details>
+      <div class="stats-bar" id="paperStatsBar" style="display: none;">
+        <div class="stat-card">
+          <div class="label">Status</div>
+          <div class="value" id="paperStatus">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Balance</div>
+          <div class="value" id="paperBalance">$0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Daily PnL</div>
+          <div class="value" id="paperDailyPnl">$0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Unrealized PnL</div>
+          <div class="value" id="paperUnrealizedPnl">$0</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Trades</div>
+          <div class="value" id="paperTradesCount">0</div>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-bottom: 20px;">
+        <div class="paper-section">
+          <h4 class="section-title">Paper positions</h4>
+          <div id="paperPortfolioLoading" class="loading">Loading portfolio…</div>
+          <div id="paperPortfolioError" class="error" style="display: none;"></div>
+          <div id="paperPositionsWrap" style="display: none;"></div>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-bottom: 20px;">
+        <div class="paper-section">
+          <h4 class="section-title">Paper trades</h4>
+          <div id="paperTradesLoading" class="loading">Loading trades…</div>
+          <div id="paperTradesError" class="error" style="display: none;"></div>
+          <table id="paperTradesTable" style="display: none;">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Market</th>
+                <th>Outcome</th>
+                <th>Size</th>
+                <th>Entry</th>
+                <th>Copied from</th>
+              </tr>
+            </thead>
+            <tbody id="paperTradesBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="paper-section">
+          <h4 class="section-title">Reset portfolio</h4>
+          <p class="text-muted" style="margin: 0 0 12px 0;">Set a new initial balance and clear all positions and trades.</p>
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <input type="number" id="paperResetBalance" value="100000" min="1" max="1000000000" step="1000" style="width: 140px; padding: 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--text); font-family: JetBrains Mono, monospace;" />
+            <button class="btn btn-primary" id="paperResetBtn">Reset portfolio</button>
+          </div>
+          <div id="paperResetMessage" class="text-muted" style="margin-top: 8px; font-size: 13px;"></div>
+        </div>
       </div>
     </div>
 
@@ -574,7 +723,126 @@
     $('refreshBtn').addEventListener('click', () => {
       const addr = getWalletAddressFromPath();
       if (addr) loadWalletPage(addr);
+      else if (window.location.hash === '#paper') loadPaper();
       else loadLeaderboard(true);
+    });
+
+    function isPaperView() { return (window.location.pathname === '/dashboard/' || window.location.pathname === '/dashboard') && window.location.hash === '#paper'; }
+
+    async function loadPaper() {
+      $('paperPortfolioLoading').style.display = 'block';
+      $('paperPortfolioError').style.display = 'none';
+      $('paperPositionsWrap').style.display = 'none';
+      $('paperTradesLoading').style.display = 'block';
+      $('paperTradesError').style.display = 'none';
+      $('paperTradesTable').style.display = 'none';
+
+      try {
+        const [portfolioRes, tradesRes] = await Promise.all([
+          fetch(API + '/api/paper/portfolio?markToMarket=true'),
+          fetch(API + '/api/paper/trades?limit=50')
+        ]);
+        if (!portfolioRes.ok) throw new Error('Portfolio: ' + portfolioRes.status);
+        if (!tradesRes.ok) throw new Error('Trades: ' + tradesRes.status);
+        const portfolio = await portfolioRes.json();
+        const tradesData = await tradesRes.json();
+        const trades = tradesData.trades || [];
+
+        $('paperStatus').innerHTML = portfolio.enabled
+          ? '<span class="paper-status-enabled"><span class="paper-status-dot"></span>Enabled</span>'
+          : '<span class="paper-status-enabled"><span class="paper-status-dot disabled"></span>Disabled</span>';
+        $('paperStatus').className = 'value';
+        $('paperBalance').textContent = fmtMoney(portfolio.balance);
+        $('paperDailyPnl').textContent = fmtMoney(portfolio.dailyPnl);
+        $('paperDailyPnl').className = 'value num-' + (portfolio.dailyPnl >= 0 ? 'positive' : 'negative');
+        $('paperUnrealizedPnl').textContent = fmtMoney(portfolio.totalUnrealizedPnl);
+        $('paperUnrealizedPnl').className = 'value num-' + (portfolio.totalUnrealizedPnl >= 0 ? 'positive' : 'negative');
+        $('paperTradesCount').textContent = portfolio.tradesCount ?? trades.length;
+        $('paperStatsBar').style.display = 'flex';
+
+        const positions = portfolio.positions || [];
+        const posHtml = positions.length === 0
+          ? '<p class="text-muted">No open positions.</p>'
+          : positions.map(p => {
+              const pnlClass = (p.unrealizedPnl ?? 0) >= 0 ? 'num-positive' : 'num-negative';
+              return `<div class="position-item">
+                <div class="position-left"><div class="position-body">
+                  <div class="title">${escapeHtml((p.marketTitle || 'Market').slice(0, 60))}</div>
+                  <div class="position-details">
+                    <span class="position-pill">${escapeHtml(p.outcome || '')}</span>
+                    <span class="position-shares">${(p.size ?? 0).toFixed(0)} @ ${(p.entryPrice ?? 0).toFixed(2)}</span>
+                  </div>
+                </div></div>
+                <div class="position-right">
+                  <div class="position-value-block">
+                    <span class="position-total-value">${fmtMoney(p.currentValue ?? p.entryValue)}</span>
+                    <span class="position-pnl-line ${pnlClass}">${fmtMoney(p.unrealizedPnl)}</span>
+                  </div>
+                </div>
+              </div>`;
+            }).join('');
+        $('paperPositionsWrap').innerHTML = posHtml;
+        $('paperPortfolioLoading').style.display = 'none';
+        $('paperPositionsWrap').style.display = 'block';
+
+        $('paperTradesBody').innerHTML = trades.length === 0
+          ? '<tr><td colspan="6" class="text-muted">No trades yet.</td></tr>'
+          : trades.map(t => {
+              const when = t.timestamp ? new Date(t.timestamp).toLocaleString() : '—';
+              return `<tr>
+                <td>${escapeHtml(when)}</td>
+                <td>${escapeHtml((t.marketTitle || '').slice(0, 40))}</td>
+                <td>${escapeHtml(t.outcome || '')}</td>
+                <td>${fmtMoney(t.size)}</td>
+                <td>${(t.entryPrice ?? 0).toFixed(2)}</td>
+                <td class="wallet-cell">${shortAddr(t.copiedFromWallet || '')}</td>
+              </tr>`;
+            }).join('');
+        $('paperTradesLoading').style.display = 'none';
+        $('paperTradesTable').style.display = 'table';
+      } catch (err) {
+        $('paperPortfolioLoading').style.display = 'none';
+        $('paperTradesLoading').style.display = 'none';
+        $('paperPortfolioError').style.display = 'block';
+        $('paperPortfolioError').textContent = 'Failed to load: ' + err.message;
+      }
+    }
+
+    $('paperResetBtn').addEventListener('click', async () => {
+      const initialBalance = Number($('paperResetBalance').value) || 100000;
+      if (initialBalance <= 0 || initialBalance > 1e9) {
+        $('paperResetMessage').textContent = 'Enter a balance between 1 and 1,000,000,000.';
+        $('paperResetMessage').className = 'reset-error';
+        return;
+      }
+      $('paperResetMessage').className = 'text-muted';
+      $('paperResetMessage').textContent = 'Resetting…';
+      try {
+        const res = await fetch(API + '/api/paper/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initialBalance })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || res.status);
+        $('paperResetMessage').textContent = 'Portfolio reset to $' + initialBalance.toLocaleString() + '.';
+        $('paperResetMessage').className = 'reset-success';
+        loadPaper();
+      } catch (err) {
+        $('paperResetMessage').textContent = 'Error: ' + err.message;
+        $('paperResetMessage').className = 'reset-error';
+      }
+    });
+
+    function updateNavActive() {
+      const isPaper = isPaperView();
+      $('navLeaderboard')?.classList.toggle('active', !isPaper && !getWalletAddressFromPath());
+      $('navPaper')?.classList.toggle('active', isPaper);
+    }
+
+    window.addEventListener('hashchange', () => {
+      updateNavActive();
+      if (isPaperView()) { showView('paperView'); loadPaper(); }
     });
 
     (function init() {
@@ -582,9 +850,15 @@
       if (addr) {
         showView('walletView');
         loadWalletPage(addr);
+        updateNavActive();
+      } else if (window.location.hash === '#paper') {
+        showView('paperView');
+        loadPaper();
+        updateNavActive();
       } else {
         showView('listView');
         loadLeaderboard();
+        updateNavActive();
       }
     })();
 
