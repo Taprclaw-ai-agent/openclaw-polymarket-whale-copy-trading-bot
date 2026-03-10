@@ -1,0 +1,29 @@
+{
+  "name": "polymarket-whale-tracker",
+  "version": "1.0.0",
+  "description": "Track top Polymarket traders, paper-trade their flow with AI risk management",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "tracker": "tsx src/tracker.ts",
+    "api": "tsx src/api-server.ts",
+    "cli": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^4.21.0",
+    "node-telegram-bot-api": "^0.66.0",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^20.10.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/node-telegram-bot-api": "^0.64.7",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  }
+}
