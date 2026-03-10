@@ -7,12 +7,11 @@ import {
   getPaperState,
   setPaperBalance,
   addPaperPosition,
-  removePaperPosition,
   addPaperTrade,
-  addPaperDailyPnl,
   getPaperPositions,
 } from './storage.js';
 import { runRiskCheck } from './risk.js';
+import { getPaperWalletAddress } from './wallet.js';
 import type { WhaleAlert } from './types.js';
 
 const PAPER_ENABLED = process.env.PAPER_TRADING_ENABLED === 'true';
@@ -25,7 +24,7 @@ function todayKey(): string {
 export async function tryOpenPaperPosition(alert: WhaleAlert): Promise<{ opened: boolean; reason: string }> {
   if (!PAPER_ENABLED) return { opened: false, reason: 'Paper trading disabled' };
 
-  const { balance, positions, dailyPnl } = getPaperState();
+  const { balance, positions } = getPaperState();
   const dateKey = todayKey();
   const dailyPnlToday = getPaperState().dailyPnl[dateKey] ?? 0;
 
@@ -95,6 +94,8 @@ async function getCurrentPriceForPosition(
 /** Get paper portfolio with optional mark-to-market (unrealized P&L). */
 export async function getPaperPortfolio(markToMarket = false): Promise<{
   enabled: boolean;
+  /** Wallet address derived from PAPER_TRADING_PRIVATE_KEY (when set). */
+  walletAddress: string | null;
   initialBalance: number;
   balance: number;
   totalUnrealizedPnl: number;
@@ -120,32 +121,36 @@ export async function getPaperPortfolio(markToMarket = false): Promise<{
   const positions = [...state.positions];
   let totalUnrealizedPnl = 0;
 
-  if (markToMarket && positions.length > 0) {
-    for (const pos of positions) {
-      const cur = await getCurrentPriceForPosition(pos.copiedFromWallet, pos.marketTitle, pos.outcome);
-      if (cur != null) {
-        const currentValue = pos.size * cur;
-        const unrealizedPnl = currentValue - pos.entryValue;
-        totalUnrealizedPnl += unrealizedPnl;
-        (pos as Record<string, unknown>).currentValue = currentValue;
-        (pos as Record<string, unknown>).unrealizedPnl = unrealizedPnl;
-      }
-    }
-  }
+  type EnrichedPosition = (typeof positions)[number] & { currentValue?: number; unrealizedPnl?: number };
+  const enriched: EnrichedPosition[] = markToMarket && positions.length > 0
+    ? await Promise.all(
+        positions.map(async (p) => {
+          const cur = await getCurrentPriceForPosition(p.copiedFromWallet, p.marketTitle, p.outcome);
+          if (cur != null) {
+            const currentValue = p.size * cur;
+            const unrealizedPnl = currentValue - p.entryValue;
+            totalUnrealizedPnl += unrealizedPnl;
+            return { ...p, currentValue, unrealizedPnl };
+          }
+          return { ...p };
+        })
+      )
+    : positions.map((p) => ({ ...p }));
 
   const dateKey = todayKey();
   const dailyPnl = state.dailyPnl[dateKey] ?? 0;
 
   return {
     enabled: PAPER_ENABLED,
+    walletAddress: getPaperWalletAddress(),
     initialBalance: state.initialBalance,
     balance: state.balance,
     totalUnrealizedPnl,
     dailyPnl,
-    positions: positions.map((p) => ({
+    positions: enriched.map((p) => ({
       ...p,
-      currentValue: (p as Record<string, unknown>).currentValue as number | undefined,
-      unrealizedPnl: (p as Record<string, unknown>).unrealizedPnl as number | undefined,
+      currentValue: p.currentValue,
+      unrealizedPnl: p.unrealizedPnl,
     })),
     tradesCount: trades.length,
   };
