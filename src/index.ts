@@ -4,6 +4,8 @@
  */
 
 import 'dotenv/config';
+import './polyfill-big.js';
+
 import { runTrackingCycle, refreshTrackedWallets } from './tracker.js';
 import { computeLeaderboard } from './leaderboard.js';
 import { initDb } from './storage.js';

@@ -28,7 +28,7 @@ app.get('/dashboard/addr/:address', (_req, res) => {
 });
 app.get('/', (_req, res) => res.redirect('/dashboard/'));
 
-const PORT = Number(process.env.PORT) || 3001;
+const PORT = Number(process.env.PORT) || 8000;
 
 // --- Leaderboard (public / gated by subscription) ---
 app.get('/api/leaderboard', async (req, res) => {
